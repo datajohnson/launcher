@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Launcher</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="window-frame">
+    <div class="title-bar">
+      <div class="title-bar-left">
+        <div class="app-icon"></div>
+        <span class="app-title">LAUNCHER</span>
+      </div>
+      <div class="title-bar-right">
+        <button class="title-btn minimize" id="minimize-btn">─</button>
+        <button class="title-btn close" id="close-btn">×</button>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <div class="sidebar">
+        <div class="projects-header">
+          <h2>PROJECTS</h2>
+          <button class="btn-add" id="add-project-btn">+ NEW</button>
+        </div>
+        <div class="projects-list" id="projects-list">
+          <!-- Projects will be dynamically added here -->
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="empty-state" id="empty-state">
+          <div class="empty-icon">🚀</div>
+          <h2>NO PROJECT SELECTED</h2>
+          <p>Select a project from the left or create a new one</p>
+        </div>
+
+        <div class="project-detail" id="project-detail" style="display: none;">
+          <div class="project-header">
+            <div class="project-header-left">
+              <h1 id="project-name">Project Name</h1>
+              <p class="project-description" id="project-description">Project description</p>
+            </div>
+            <div class="project-header-right">
+              <button class="btn-secondary" id="edit-project-btn">EDIT</button>
+              <button class="btn-primary" id="launch-all-btn">LAUNCH ALL</button>
+            </div>
+          </div>
+
+          <div class="tools-grid" id="tools-grid">
+            <!-- Tools will be dynamically added here -->
+          </div>
+        </div>
+
+        <!-- Project Edit Form -->
+        <div class="project-form" id="project-form" style="display: none;">
+          <div class="form-header">
+            <h2 id="form-title">NEW PROJECT</h2>
+            <button class="btn-icon" id="cancel-form-btn">×</button>
+          </div>
+
+          <div class="form-content">
+            <div class="form-group">
+              <label>PROJECT NAME</label>
+              <input type="text" id="form-project-name" placeholder="Enter project name">
+            </div>
+
+            <div class="form-group">
+              <label>DESCRIPTION</label>
+              <input type="text" id="form-project-description" placeholder="Enter project description">
+            </div>
+
+            <div class="form-group">
+              <label>TOOLS</label>
+              <div class="tools-list" id="tools-form-list">
+                <!-- Tools will be added here -->
+              </div>
+              <button class="btn-add-tool" id="add-tool-btn">+ ADD TOOL</button>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn-danger" id="delete-project-btn" style="display: none;">DELETE PROJECT</button>
+              <div style="flex: 1;"></div>
+              <button class="btn-secondary" id="cancel-btn">CANCEL</button>
+              <button class="btn-primary" id="save-project-btn">SAVE PROJECT</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

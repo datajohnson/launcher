@@ -1,0 +1,41 @@
+{
+  "name": "launcher",
+  "version": "1.0.0",
+  "description": "SpaceX-inspired project launcher for Windows",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "package": "electron-packager . Launcher --platform=win32 --arch=x64 --out=dist --overwrite --icon=assets/icon.ico",
+    "package:linux": "electron-packager . Launcher --platform=linux --arch=x64 --out=dist --overwrite",
+    "package:all": "npm run package && npm run package:linux",
+    "dev": "electron . --dev"
+  },
+  "build": {
+    "appId": "com.launcher.app",
+    "productName": "Launcher",
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    }
+  },
+  "keywords": [
+    "launcher",
+    "productivity",
+    "electron"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "electron-packager": "^17.1.2"
+  }
+}
