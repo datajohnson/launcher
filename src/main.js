@@ -2,11 +2,23 @@ const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, dialog } = 
 const path = require('path');
 const { exec } = require('child_process');
 const fs = require('fs');
+const tracker = require('./tracker');
 
 let tray = null;
 let mainWindow = null;
 let currentProject = null;
+let trackerStatus = { tracking: false, paused: false, todayActiveMs: 0 };
 const configPath = path.join(app.getPath('userData'), 'projects.json');
+
+// Format a ms duration as "2h13m" / "47m" / "12s" for compact tray/status display.
+function formatDuration(ms) {
+  const totalSec = Math.max(0, Math.round((ms || 0) / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  if (h > 0) return `${h}h${String(m).padStart(2, '0')}m`;
+  if (m > 0) return `${m}m`;
+  return `${totalSec}s`;
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -87,6 +99,19 @@ function updateTrayMenu() {
     }
   ];
 
+  // Time-tracking live status + pause toggle
+  menuTemplate.push({ type: 'separator' });
+  menuTemplate.push({
+    label: `⏱ Today: ${formatDuration(trackerStatus.todayActiveMs)}${trackerStatus.paused ? ' (paused)' : ''}`,
+    enabled: false
+  });
+  menuTemplate.push({
+    label: trackerStatus.paused ? '▶ Resume tracking' : '⏸ Pause tracking',
+    click: () => {
+      if (trackerStatus.paused) tracker.resume(); else tracker.pause();
+    }
+  });
+
   // Add current project tools if available
   if (currentProject) {
     menuTemplate.push({ type: 'separator' });
@@ -139,7 +164,9 @@ function updateTrayMenu() {
   });
 
   const contextMenu = Menu.buildFromTemplate(menuTemplate);
-  tray.setToolTip(currentProject ? `Launcher - ${currentProject.name}` : 'Launcher');
+  const today = formatDuration(trackerStatus.todayActiveMs);
+  const base = currentProject ? `Launcher - ${currentProject.name}` : 'Launcher';
+  tray.setToolTip(`${base}\nToday: ${today}${trackerStatus.paused ? ' (paused)' : ''}`);
   tray.setContextMenu(contextMenu);
 }
 
@@ -227,6 +254,7 @@ function saveProjects(projects) {
 app.whenReady().then(() => {
   createWindow();
   createTray();
+  initTracker();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -235,8 +263,38 @@ app.whenReady().then(() => {
   });
 });
 
+// Start the time tracker and route its live updates to the renderer + tray.
+function initTracker() {
+  tracker.init({
+    userDataPath: app.getPath('userData'),
+    getProjects: loadProjects,
+    onUpdate: (evt) => {
+      if (evt && evt.status) trackerStatus = evt.status;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('tracker-update', evt);
+      }
+      updateTrayMenu();
+    }
+  }).catch((err) => {
+    console.error('[tracking] failed to initialize tracker:', err);
+  });
+
+  // Refresh the tray's "Today" total roughly once a minute even when focus is stable.
+  setInterval(() => {
+    try {
+      trackerStatus = tracker.getStatus();
+      updateTrayMenu();
+    } catch (_) { /* tracker not ready */ }
+  }, 60 * 1000);
+}
+
 app.on('window-all-closed', (event) => {
   event.preventDefault();
+});
+
+// Flush the open segment + pending batch before the process exits.
+app.on('before-quit', () => {
+  try { tracker.stop(); } catch (err) { console.error('[tracking] stop failed:', err); }
 });
 
 // IPC Handlers
@@ -245,7 +303,10 @@ ipcMain.handle('get-projects', async () => {
 });
 
 ipcMain.handle('save-projects', async (event, projects) => {
-  return saveProjects(projects);
+  const ok = saveProjects(projects);
+  // New/changed project paths should immediately affect auto-matching.
+  try { tracker.reloadProjects(); } catch (_) { /* tracker not ready */ }
+  return ok;
 });
 
 ipcMain.handle('launch-tool', async (event, tool) => {
@@ -287,5 +348,71 @@ ipcMain.handle('select-file', async () => {
 ipcMain.handle('set-current-project', async (event, project) => {
   currentProject = project;
   updateTrayMenu();
+  return true;
+});
+
+// ---- Time tracking IPC ----
+const timeStore = require('./timeStore');
+
+ipcMain.handle('get-time-segments', async (event, range) => {
+  try {
+    return timeStore.getSegments(range.from, range.to);
+  } catch (err) {
+    console.error('[tracking] get-time-segments failed:', err.message);
+    return [];
+  }
+});
+
+ipcMain.handle('get-rollups', async (event, { range, groupBy }) => {
+  try {
+    return timeStore.getRollups(range.from, range.to, groupBy);
+  } catch (err) {
+    console.error('[tracking] get-rollups failed:', err.message);
+    return [];
+  }
+});
+
+ipcMain.handle('get-tracker-status', async () => {
+  try { return tracker.getStatus(); } catch (_) { return trackerStatus; }
+});
+
+ipcMain.handle('update-segment', async (event, { id, fields }) => {
+  return timeStore.updateSegment(id, fields || {});
+});
+
+ipcMain.handle('update-segments', async (event, { ids, fields }) => {
+  return timeStore.updateSegments(ids || [], fields || {});
+});
+
+ipcMain.handle('delete-segments', async (event, ids) => {
+  timeStore.deleteSegments(ids || []);
+  return true;
+});
+
+ipcMain.handle('add-manual-segment', async (event, seg) => {
+  return timeStore.addManualSegment(seg);
+});
+
+ipcMain.handle('merge-segments', async (event, { ids, override }) => {
+  return timeStore.mergeSegments(ids, override || {});
+});
+
+ipcMain.handle('delete-segment', async (event, id) => {
+  timeStore.deleteSegment(id);
+  return true;
+});
+
+ipcMain.handle('set-tracking-paused', async (event, wantPaused) => {
+  if (wantPaused) tracker.pause(); else tracker.resume();
+  return tracker.getStatus();
+});
+
+ipcMain.handle('clear-time-data', async () => {
+  timeStore.deleteAll();
+  return true;
+});
+
+ipcMain.handle('reload-tracking-config', async () => {
+  tracker.reloadConfig(app.getPath('userData'));
   return true;
 });

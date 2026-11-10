@@ -21,6 +21,10 @@
 
     <div class="main-container">
       <div class="sidebar">
+        <div class="nav-toggle">
+          <button class="nav-btn active" id="nav-projects-btn">PROJECTS</button>
+          <button class="nav-btn" id="nav-time-btn">TIME</button>
+        </div>
         <div class="projects-header">
           <h2>PROJECTS</h2>
           <button class="btn-add" id="add-project-btn">+ NEW</button>
@@ -88,10 +92,119 @@
             </div>
           </div>
         </div>
+
+      <!-- Time Tracking View -->
+      <div class="time-view" id="time-view" style="display: none;">
+        <div class="time-header">
+          <h1>TIME TRACKING</h1>
+          <div class="time-status" id="time-status">
+            <span class="time-status-dot" id="time-status-dot"></span>
+            <span id="time-status-text">Today: 0m</span>
+            <button class="btn-secondary" id="time-pause-btn">PAUSE</button>
+          </div>
+        </div>
+
+        <div class="time-toolbar">
+          <div class="time-toolbar-group">
+            <button class="btn-icon" id="time-prev-btn">‹</button>
+            <span class="time-date-label" id="time-date-label">Today</span>
+            <button class="btn-icon" id="time-next-btn">›</button>
+            <button class="btn-secondary" id="time-today-btn">TODAY</button>
+          </div>
+          <div class="time-toolbar-group">
+            <div class="seg-toggle" id="time-range-toggle">
+              <button class="seg-btn active" data-range="day">DAY</button>
+              <button class="seg-btn" data-range="week">WEEK</button>
+            </div>
+            <div class="seg-toggle" id="time-group-toggle">
+              <button class="seg-btn active" data-group="project">PROJECT</button>
+              <button class="seg-btn" data-group="category">CATEGORY</button>
+            </div>
+            <button class="btn-secondary" id="time-add-btn">+ ENTRY</button>
+          </div>
+        </div>
+
+        <div class="time-timeline-wrap">
+          <div class="time-timeline-hours" id="time-timeline-hours"></div>
+          <div class="time-timeline" id="time-timeline">
+            <!-- segment blocks injected here -->
+          </div>
+        </div>
+
+        <div class="time-totals">
+          <div class="time-totals-col">
+            <h3>BY PROJECT</h3>
+            <div class="time-totals-list" id="time-totals-project"></div>
+          </div>
+          <div class="time-totals-col">
+            <h3>BY APP</h3>
+            <div class="time-totals-list" id="time-totals-app"></div>
+          </div>
+        </div>
+
+        <div class="time-footer">
+          <button class="btn-danger" id="time-clear-btn">CLEAR ALL DATA</button>
+        </div>
+      </div>
+
+      <!-- Segment editor (overlay) -->
+      <div class="seg-editor-overlay" id="seg-editor" style="display: none;">
+        <div class="seg-editor">
+          <div class="form-header">
+            <h2 id="seg-editor-title">EDIT ENTRY</h2>
+            <button class="btn-icon" id="seg-editor-close">×</button>
+          </div>
+          <div class="form-content">
+            <div class="seg-editor-meta" id="seg-editor-meta"></div>
+            <div class="form-group time-fields" id="seg-editor-times" style="display:none;">
+              <div>
+                <label>START</label>
+                <input type="datetime-local" id="seg-editor-start">
+              </div>
+              <div>
+                <label>END</label>
+                <input type="datetime-local" id="seg-editor-end">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>PROJECT</label>
+              <select id="seg-editor-project"></select>
+            </div>
+            <div class="form-group">
+              <label>CATEGORY</label>
+              <select id="seg-editor-category"></select>
+            </div>
+            <div class="form-actions">
+              <button class="btn-danger" id="seg-editor-delete">DELETE</button>
+              <div style="flex: 1;"></div>
+              <button class="btn-secondary" id="seg-editor-cancel">CANCEL</button>
+              <button class="btn-primary" id="seg-editor-save">SAVE</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bucket drill-down (overlay): list + reassign everything in a project/app -->
+      <div class="seg-editor-overlay" id="drilldown" style="display: none;">
+        <div class="drilldown">
+          <div class="form-header">
+            <h2 id="drilldown-title">BUCKET</h2>
+            <button class="btn-icon" id="drilldown-close">×</button>
+          </div>
+          <div class="drilldown-bulk">
+            <span class="drilldown-bulk-label">Set all →</span>
+            <select id="drilldown-bulk-project"></select>
+            <select id="drilldown-bulk-category"></select>
+            <button class="btn-primary" id="drilldown-bulk-apply">APPLY</button>
+          </div>
+          <div class="drilldown-list" id="drilldown-list"></div>
+        </div>
+      </div>
       </div>
     </div>
   </div>
 
   <script src="renderer.js"></script>
+  <script src="timeview.js"></script>
 </body>
 </html>

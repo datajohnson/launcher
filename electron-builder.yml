@@ -1,0 +1,22 @@
+appId: com.launcher.app
+productName: Launcher
+directories:
+  output: dist
+# get-windows ships a prebuilt Windows executable it spawns at runtime; it (and the
+# optional native @paymoapp/active-window, if installed) must stay outside the asar
+# archive so the binaries are on the real filesystem.
+asar: true
+asarUnpack:
+  - "**/node_modules/get-windows/**"
+  - "**/node_modules/@paymoapp/active-window/**"
+  - "**/*.node"
+  - "**/*.exe"
+npmRebuild: true
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  icon: assets/icon.ico
+  forceCodeSigning: false
+  verifyUpdateCodeSignature: false
